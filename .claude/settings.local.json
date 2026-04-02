@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(gh repo:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh issue:*)",
+      "Bash(node:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(docker exec:*)",
+      "Bash(npx tsx:*)",
+      "Bash(env)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr:*)"
+    ]
+  }
+}
