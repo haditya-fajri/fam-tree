@@ -1,10 +1,13 @@
-import { pgTable, uuid, varchar, text, timestamp, char, date, boolean, check, primaryKey, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, char, date, boolean, check, primaryKey, unique, integer, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { AdapterAccountType } from "next-auth/adapters";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 150 }).unique().notNull(),
+  emailVerified: timestamp("emailVerified"),
   name: varchar("name", { length: 100 }),
+  image: text("image"),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
@@ -33,7 +36,7 @@ export const partnerships = pgTable("partnerships", {
 }, (table) => {
   return [
     check("partnerships_no_self", sql`${table.personA} <> ${table.personB}`),
-    unique("unique_pair").on(sql`LEAST(${table.personA}::text, ${table.personB}::text)`, sql`GREATEST(${table.personA}::text, ${table.personB}::text)`),
+    uniqueIndex("idx_partnerships_unique_pair").on(sql`LEAST(${table.personA}::text, ${table.personB}::text), GREATEST(${table.personA}::text, ${table.personB}::text)`),
   ];
 });
 
@@ -66,3 +69,34 @@ export const treeMembers = pgTable("tree_members", {
     primaryKey({ columns: [table.treeId, table.personId] })
   ];
 });
+
+// NextAuth v5 tables
+export const accounts = pgTable("accounts", {
+  userId: uuid("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").$type<AdapterAccountType>().notNull(),
+  provider: text("provider").notNull(),
+  providerAccountId: text("providerAccountId").notNull(),
+  refresh_token: text("refresh_token"),
+  access_token: text("access_token"),
+  expires_at: integer("expires_at"),
+  token_type: text("token_type"),
+  scope: text("scope"),
+  id_token: text("id_token"),
+  session_state: text("session_state"),
+}, (table) => [
+  primaryKey({ columns: [table.provider, table.providerAccountId] })
+]);
+
+export const sessions = pgTable("sessions", {
+  sessionToken: text("sessionToken").primaryKey(),
+  userId: uuid("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+});
+
+export const verificationTokens = pgTable("verification_tokens", {
+  identifier: text("identifier").notNull(),
+  token: text("token").notNull(),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.identifier, table.token] })
+]);
